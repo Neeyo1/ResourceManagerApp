@@ -11,6 +11,7 @@ public class DataContext(DbContextOptions options) : IdentityDbContext<AppUser, 
 {
     public DbSet<Room> Rooms { get; set; }
     public DbSet<RoomReservation> RoomReservations { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
