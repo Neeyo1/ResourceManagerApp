@@ -2,9 +2,11 @@ using API.Interfaces;
 
 namespace API.Data;
 
-public class UnitOfWork(DataContext context, ITokenRepository tokenRepository) : IUnitOfWork
+public class UnitOfWork(DataContext context, ITokenRepository tokenRepository,
+    IRoomRepository roomRepository) : IUnitOfWork
 {
     public ITokenRepository TokenRepository => tokenRepository;
+    public IRoomRepository RoomRepository => roomRepository;
 
     public async Task<bool> Complete()
     {

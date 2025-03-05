@@ -1,4 +1,5 @@
 using API.DTOs.Account;
+using API.DTOs.Room;
 using API.Entities;
 using AutoMapper;
 
@@ -10,6 +11,8 @@ public class AutoMapperProfiles : Profile
     {
         CreateMap<AppUser, UserDto>();
         CreateMap<RegisterDto, AppUser>();
+        CreateMap<Room, RoomDto>();
+        CreateMap<RoomCreateDto, Room>();
         
         CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
         CreateMap<DateTime?, DateTime?>().ConvertUsing(d => d.HasValue 
