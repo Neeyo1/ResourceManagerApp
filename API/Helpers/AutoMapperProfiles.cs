@@ -1,4 +1,6 @@
+using API.DTOs;
 using API.DTOs.Account;
+using API.DTOs.Reservation;
 using API.DTOs.Room;
 using API.Entities;
 using AutoMapper;
@@ -10,9 +12,12 @@ public class AutoMapperProfiles : Profile
     public AutoMapperProfiles()
     {
         CreateMap<AppUser, UserDto>();
+        CreateMap<AppUser, MemberDto>();
         CreateMap<RegisterDto, AppUser>();
         CreateMap<Room, RoomDto>();
         CreateMap<RoomCreateDto, Room>();
+        CreateMap<RoomReservation, RoomReservationDto>();
+        CreateMap<RoomReservationCreateDto, RoomReservation>();
         
         CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
         CreateMap<DateTime?, DateTime?>().ConvertUsing(d => d.HasValue 
