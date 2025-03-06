@@ -1,0 +1,38 @@
+[
+    {
+        "reservedFrom": "2025-03-06T12:00:00Z",
+        "reservedTo": "2025-03-06T13:00:00Z",
+        "roomId": 1,
+        "userId": 1
+    },
+    {
+        "reservedFrom": "2025-03-06T13:30:00Z",
+        "reservedTo": "2025-03-06T14:00:00Z",
+        "roomId": 1,
+        "userId": 1
+    },
+    {
+        "reservedFrom": "2025-03-06T14:10:00Z",
+        "reservedTo": "2025-03-06T15:00:00Z",
+        "roomId": 1,
+        "userId": 1
+    },
+    {
+        "reservedFrom": "2025-03-06T18:00:00Z",
+        "reservedTo": "2025-03-06T20:00:00Z",
+        "roomId": 1,
+        "userId": 1
+    },
+    {
+        "reservedFrom": "2025-03-07T08:00:00Z",
+        "reservedTo": "2025-03-07T12:00:00Z",
+        "roomId": 2,
+        "userId": 1
+    },
+    {
+        "reservedFrom": "2025-03-07T08:00:00Z",
+        "reservedTo": "2025-03-07T12:00:00Z",
+        "roomId": 3,
+        "userId": 1
+    }
+]

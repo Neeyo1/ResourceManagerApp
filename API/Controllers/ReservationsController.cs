@@ -58,7 +58,7 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         }
 
         var roomReservation = mapper.Map<RoomReservation>(roomReservationCreateDto);
-        roomReservation.ReservedBy = user;
+        roomReservation.User = user;
 
         unitOfWork.ReservationRepository.AddRoomReservation(roomReservation);
 
@@ -84,7 +84,7 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         {
             return BadRequest("Failed to find roomReservation");
         }
-        if (roomReservation.ReservedBy != user)
+        if (roomReservation.User != user)
         {
             return Unauthorized();
         }
@@ -98,7 +98,7 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         {
             return BadRequest("This reservation collides with another one");
         }
-        else if(roomReservations.Count() == 1 && roomReservations.First().ReservedBy != user)
+        else if(roomReservations.Count() == 1 && roomReservations.First().User != user)
         {
             return BadRequest("This reservation collides with another one");
         }
@@ -128,7 +128,7 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         {
             return BadRequest("Failed to find roomReservation");
         }
-        if (roomReservation.ReservedBy != user)
+        if (roomReservation.User != user)
         {
             return Unauthorized();
         }

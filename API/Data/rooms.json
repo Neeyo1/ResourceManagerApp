@@ -1,0 +1,62 @@
+[
+    {
+        "name": "100A",
+        "capacity": 20,
+        "roomType": "TrainingRoom"
+    },
+    {
+        "name": "100B",
+        "capacity": 20,
+        "roomType": "TrainingRoom"
+    },
+    {
+        "name": "100C",
+        "capacity": 20,
+        "roomType": "TrainingRoom"
+    },
+    {
+        "name": "101",
+        "capacity": 40,
+        "roomType": "ConferenceRoom"
+    },
+    {
+        "name": "102",
+        "capacity": 50,
+        "roomType": "ConferenceRoom"
+    },
+    {
+        "name": "103",
+        "capacity": 40,
+        "roomType": "ConferenceRoom"
+    },
+    {
+        "name": "104",
+        "capacity": 90,
+        "roomType": "ConferenceRoom"
+    },
+    {
+        "name": "200",
+        "capacity": 5,
+        "roomType": "InterviewRoom"
+    },
+    {
+        "name": "201",
+        "capacity": 5,
+        "roomType": "InterviewRoom"
+    },
+    {
+        "name": "202",
+        "capacity": 5,
+        "roomType": "InterviewRoom"
+    },
+    {
+        "name": "301",
+        "capacity": 10,
+        "roomType": "MeetingRoom"
+    },
+    {
+        "name": "302",
+        "capacity": 15,
+        "roomType": "MeetingRoom"
+    }
+]

@@ -29,7 +29,7 @@ public class ReservationRepository(DataContext context, IMapper mapper) : IReser
     public async Task<RoomReservation?> GetRoomReservationByIdAsync(int roomReservationId)
     {
         return await context.RoomReservations
-            .Include(x => x.ReservedBy)
+            .Include(x => x.User)
             .FirstOrDefaultAsync(x => x.Id == roomReservationId);
     }
 

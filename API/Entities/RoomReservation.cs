@@ -12,5 +12,5 @@ public class RoomReservation
 
     //RoomReservation - AppUser
     public int UserId { get; set; }
-    public AppUser ReservedBy { get; set; } = null!;
+    public AppUser User { get; set; } = null!;
 }
