@@ -1,5 +1,6 @@
 using API.DTOs.Reservation;
 using API.Entities;
+using API.Helpers;
 
 namespace API.Interfaces;
 
@@ -7,10 +8,8 @@ public interface IReservationRepository
 {
     void AddRoomReservation(RoomReservation roomReservation);
     void DeleteRoomReservation(RoomReservation roomReservation);
-    Task<IEnumerable<RoomReservationDto>> GetRoomReservationsAsync();
+    Task<PagedList<RoomReservationDto>> GetRoomReservationsAsync(RoomReservationParams roomReservationParams);
     Task<RoomReservation?> GetRoomReservationByIdAsync(int roomReservationId);
     Task<bool> IsRoomReserved(int roomId, DateTime start, DateTime end);
-
-    //Temp solution
     Task<IEnumerable<RoomReservation>> GetRoomReservationsInPeriodAsync(int roomId, DateTime start, DateTime end);
 }

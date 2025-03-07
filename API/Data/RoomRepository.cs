@@ -1,5 +1,6 @@
 using API.DTOs.Room;
 using API.Entities;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -19,11 +20,46 @@ public class RoomRepository(DataContext context, IMapper mapper) : IRoomReposito
         context.Rooms.Remove(room);
     }
 
-    public async Task<IEnumerable<RoomDto>> GetRoomsAsync()
+    public async Task<PagedList<RoomDto>> GetRoomsAsync(RoomParams roomParams)
     {
-        return await context.Rooms
-            .ProjectTo<RoomDto>(mapper.ConfigurationProvider)
-            .ToListAsync();
+        var query = context.Rooms.AsQueryable();
+
+        if (roomParams.Name != null)
+        {
+            query = query.Where(x => x.Name.Contains(roomParams.Name));
+        }
+
+        if (roomParams.MinCapacity != null)
+        {
+            query = query.Where(x => x.Capacity >= roomParams.MinCapacity);
+        }
+
+        if (roomParams.MaxCapacity != null)
+        {
+            query = query.Where(x => x.Capacity <= roomParams.MaxCapacity);
+        }
+
+        query = roomParams.Type switch
+        {
+            "conference-room" => query.Where(x => x.RoomType == RoomType.ConferenceRoom),
+            "interview-room" => query.Where(x => x.RoomType == RoomType.InterviewRoom),
+            "meeting-room" => query.Where(x => x.RoomType == RoomType.MeetingRoom),
+            "training-room" => query.Where(x => x.RoomType == RoomType.TrainingRoom),
+            _ => query //"all"
+        };
+
+        query = roomParams.OrderBy switch
+        {
+            "name" => query.OrderBy(x => x.Name),
+            "name-desc" => query.OrderByDescending(x => x.Name),
+            "capacity" => query.OrderBy(x => x.Capacity),
+            "capacity-desc" => query.OrderByDescending(x => x.Capacity),
+            _ => query.OrderBy(x => x.Name) //"name"
+        };
+
+        return await PagedList<RoomDto>.CreateAsync(
+            query.ProjectTo<RoomDto>(mapper.ConfigurationProvider), 
+            roomParams.PageNumber, roomParams.PageSize);
     }
 
     public async Task<Room?> GetRoomByIdAsync(int roomId)

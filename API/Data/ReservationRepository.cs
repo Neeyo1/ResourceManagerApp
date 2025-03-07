@@ -1,5 +1,6 @@
 using API.DTOs.Reservation;
 using API.Entities;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -19,11 +20,48 @@ public class ReservationRepository(DataContext context, IMapper mapper) : IReser
         context.RoomReservations.Remove(roomReservation);
     }
 
-    public async Task<IEnumerable<RoomReservationDto>> GetRoomReservationsAsync()
+    public async Task<PagedList<RoomReservationDto>> GetRoomReservationsAsync(RoomReservationParams roomReservationParams)
     {
-        return await context.RoomReservations
-            .ProjectTo<RoomReservationDto>(mapper.ConfigurationProvider)
-            .ToListAsync();
+        var query = context.RoomReservations.AsQueryable();
+
+        if (roomReservationParams.ReservedFrom != null)
+        {
+            query = query.Where(x => x.ReservedFrom >= roomReservationParams.ReservedFrom);
+        }
+
+        if (roomReservationParams.ReservedTo != null)
+        {
+            query = query.Where(x => x.ReservedTo >= roomReservationParams.ReservedTo);
+        }
+
+        if (roomReservationParams.RoomId != null)
+        {
+            query = query.Where(x => x.RoomId == roomReservationParams.RoomId);
+        }
+
+        if (roomReservationParams.UserId != null)
+        {
+            query = query.Where(x => x.UserId == roomReservationParams.UserId);
+        }
+
+        query = roomReservationParams.Status switch
+        {
+            "completed" => query.Where(x => x.ReservedTo < DateTime.UtcNow),
+            "ongoing" => query.Where(x => x.ReservedFrom < DateTime.UtcNow && x.ReservedTo > DateTime.UtcNow),
+            "upcoming" => query.Where(x => x.ReservedFrom > DateTime.UtcNow),
+            _ => query //"all"
+        };
+
+        query = roomReservationParams.OrderBy switch
+        {
+            "date" => query.OrderBy(x => x.ReservedFrom),
+            "date-desc" => query.OrderByDescending(x => x.ReservedFrom),
+            _ => query.OrderBy(x => x.ReservedFrom) //"date"
+        };
+
+        return await PagedList<RoomReservationDto>.CreateAsync(
+            query.ProjectTo<RoomReservationDto>(mapper.ConfigurationProvider), 
+            roomReservationParams.PageNumber, roomReservationParams.PageSize);
     }
 
     public async Task<RoomReservation?> GetRoomReservationByIdAsync(int roomReservationId)

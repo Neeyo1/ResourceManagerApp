@@ -1,5 +1,7 @@
 using API.DTOs.Room;
 using API.Entities;
+using API.Extensions;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -11,9 +13,10 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
 {
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<RoomDto>>> GetRooms()
+    public async Task<ActionResult<PagedList<RoomDto>>> GetRooms([FromQuery] RoomParams roomParams)
     {
-        var rooms = await unitOfWork.RoomRepository.GetRoomsAsync();
+        var rooms = await unitOfWork.RoomRepository.GetRoomsAsync(roomParams);
+        Response.AddPaginationHeader(rooms);
         
         return Ok(rooms);
     }

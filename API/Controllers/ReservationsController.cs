@@ -1,6 +1,7 @@
 using API.DTOs.Reservation;
 using API.Entities;
 using API.Extensions;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -14,10 +15,12 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
 {
     [Authorize]
     [HttpGet("rooms")]
-    public async Task<ActionResult<IEnumerable<RoomReservationDto>>> GetRoomReservations()
+    public async Task<ActionResult<PagedList<RoomReservationDto>>> GetRoomReservations(
+        [FromQuery] RoomReservationParams roomReservationParams)
     {
-        var roomReservations = await unitOfWork.ReservationRepository.GetRoomReservationsAsync();
-        
+        var roomReservations = await unitOfWork.ReservationRepository.GetRoomReservationsAsync(roomReservationParams);
+        Response.AddPaginationHeader(roomReservations);
+
         return Ok(roomReservations);
     }
 
