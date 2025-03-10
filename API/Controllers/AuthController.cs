@@ -29,34 +29,69 @@ public class AuthController(UserManager<AppUser> userManager, ITokenService toke
     public async Task<ActionResult> GoogleResponse()
     {
         var authenticateResult = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-
         if (!authenticateResult.Succeeded)
+        {
             return BadRequest("Google authentication failed.");
+        }
 
         var claims = authenticateResult.Principal.Identities.FirstOrDefault()?.Claims;
         var email = claims?.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-
         if (email == null)
+        {
             return BadRequest("Email not found");
+        }
 
         var user = await userManager.Users
             .SingleOrDefaultAsync(x => x.NormalizedEmail == email.ToUpper());
-        if (user == null || user.Email == null)
+        if (user == null || user.Email == null) // register
         {
-            return BadRequest("Account with this email is not registered");
+            var firstName = claims?.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
+            var lastName = claims?.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
+            if (firstName == null || lastName == null)
+            {
+                return BadRequest("Failed to register");
+            }
+
+            user = new AppUser
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                EmailConfirmed = true,
+                UserName = Guid.NewGuid().ToString()
+            };
+
+            var result = await userManager.CreateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            var userToReturn = mapper.Map<UserDto>(user);
+            userToReturn.Token = await tokenService.CreateToken(user);
+
+            var refreshToken = tokenService.CreateRefreshToken(user.Email!);
+            HttpContext.SetRefreshToken(refreshToken.Token);
+
+            if (await unitOfWork.Complete())
+            {
+                return Ok(userToReturn);
+            }
+            return BadRequest("Failed to register");
         }
-
-        var userToReturn = mapper.Map<UserDto>(user);
-        userToReturn.Token = await tokenService.CreateToken(user);
-
-        var refreshToken = tokenService.CreateRefreshToken(user.Email);
-        HttpContext.SetRefreshToken(refreshToken.Token);
-
-        if (await unitOfWork.Complete())
+        else // login
         {
-            return Ok(userToReturn);
-        }
+            var userToReturn = mapper.Map<UserDto>(user);
+            userToReturn.Token = await tokenService.CreateToken(user);
 
-        return BadRequest("Failed to login via Google");
+            var refreshToken = tokenService.CreateRefreshToken(user.Email);
+            HttpContext.SetRefreshToken(refreshToken.Token);
+
+            if (await unitOfWork.Complete())
+            {
+                return Ok(userToReturn);
+            }
+            return BadRequest("Failed to login");
+        }
     }
 }
