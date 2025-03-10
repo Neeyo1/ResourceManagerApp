@@ -1,3 +1,4 @@
+using API.DTOs.Reservation;
 using API.DTOs.Room;
 using API.Entities;
 using API.Helpers;
@@ -73,5 +74,33 @@ public class RoomRepository(DataContext context, IMapper mapper) : IRoomReposito
         return await context.Rooms
             .Include(x => x.RoomReservations)
             .FirstOrDefaultAsync(x => x.Id == roomId);
+    }
+
+    public async Task<IEnumerable<RoomWithReservationsDto>> GetRoomsWithReservationsByIdAsync(
+        DateTime start, DateTime end)
+    {
+        var rooms = await context.Rooms
+            .Include(x => x.RoomReservations)
+            .ThenInclude(x => x.User)
+            .ToListAsync();
+
+        return rooms.Select(room =>
+        {
+            var reservations = room.RoomReservations
+                .Where(x => start < x.ReservedTo && end > x.ReservedFrom)
+                .ToList();
+
+            var roomStatus = reservations.Count == 0
+                ? RoomStatus.Avaiable
+                : reservations.Any(x => x.ReservedFrom > start || x.ReservedTo < end)
+                    ? RoomStatus.PartiallyAvaiable
+                    : RoomStatus.Unavaiable;
+
+            var dto = mapper.Map<RoomWithReservationsDto>(room);
+            dto.RoomStatus = roomStatus.ToString();
+            dto.RoomReservations = mapper.Map<List<RoomReservationDto>>(reservations);
+
+            return dto;
+        }).ToList();
     }
 }
