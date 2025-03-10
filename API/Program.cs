@@ -3,6 +3,7 @@ using API.Data;
 using API.Entities;
 using API.Interfaces;
 using API.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +52,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 ClockSkew = TimeSpan.Zero
             };
         }
-    );
+    )
+    .AddGoogle(options =>
+    {
+        var clientId = builder.Configuration["Google:ClientId"] ??
+                throw new Exception("Google client id not found");
+        var clientSecret = builder.Configuration["Google:ClientSecret"] ??
+                throw new Exception("Google client secret not found");
+        options.ClientId = clientId;
+        options.ClientSecret = clientSecret;
+        options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
 
 
 builder.Services.AddAuthorizationBuilder()
