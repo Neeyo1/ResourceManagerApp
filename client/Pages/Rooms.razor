@@ -1,0 +1,109 @@
+﻿@page "/rooms"
+@inject HttpClient Http
+@using System.Text.Json
+@using client.Components
+
+<PageTitle>Rooms</PageTitle>
+
+<h1>Rooms</h1>
+
+@if (rooms == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Capacity</th>
+                <th>RoomType</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var room in rooms)
+            {
+                <tr>
+                    <td>@room.Id</td>
+                    <td>@room.Name</td>
+                    <td>@room.Capacity</td>
+                    <td>@room.RoomType</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <Pagination
+        CurrentPage="currentPage"
+        TotalPages="totalPages"
+        OnPageChanged="PageChanged"
+    />
+}
+
+@code {
+    private RoomDto[]? rooms;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private int pageSize = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoomsData(currentPage);
+    }
+
+    private async Task LoadRoomsData(int page)
+    {
+        var response = await Http.GetAsync($"rooms?pageNumber={currentPage}&pageSize={pageSize}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            rooms = await response.Content.ReadFromJsonAsync<RoomDto[]>();
+
+            if (response.Headers.Contains("Pagination"))
+            {
+                var paginationHeader = response.Headers.GetValues("Pagination").FirstOrDefault();
+                if (paginationHeader == null)
+                {
+                    return;
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var paginationData = JsonSerializer.Deserialize<PaginationDto>(paginationHeader, options);
+                if (paginationData == null)
+                {
+                    return;
+                }
+
+                totalPages = paginationData.TotalPages;
+            }
+        }
+    }
+
+    private async Task PageChanged(int newPage)
+    {
+        currentPage = newPage;
+        await LoadRoomsData(currentPage);
+    }
+
+    public class RoomDto
+    {
+        public int Id { get; set; }
+        public required string Name { get; set; }
+        public int Capacity { get; set; }
+        public required string RoomType { get; set; }
+    }
+
+    public class PaginationDto
+    {
+        public int CurrentPage { get; set; }
+        public int ItemsPerPage { get; set; }
+        public int TotalItems { get; set; }
+        public int TotalPages { get; set; }
+    }
+}

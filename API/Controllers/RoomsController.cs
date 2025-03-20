@@ -9,9 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+//[Authorize]
 public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiController
 {
-    [Authorize]
     [HttpGet]
     public async Task<ActionResult<PagedList<RoomDto>>> GetRooms([FromQuery] RoomParams roomParams)
     {
@@ -21,7 +21,6 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return Ok(rooms);
     }
 
-    [Authorize]
     [HttpGet("{roomId}")]
     public async Task<ActionResult<RoomDto>> GetRoom(int roomId)
     {
@@ -34,7 +33,6 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return Ok(mapper.Map<RoomDto>(room));
     }
 
-    [Authorize]
     [HttpPost]
     public async Task<ActionResult<RoomDto>> CreateRoom(RoomCreateDto roomCreateDto)
     {
@@ -49,7 +47,6 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return BadRequest("Failed to create room");
     }
 
-    [Authorize]
     [HttpPut("{roomId}")]
     public async Task<ActionResult<RoomDto>> UpdateRoom(RoomUpdateDto roomUpdateDto, int roomId)
     {
@@ -70,7 +67,6 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return BadRequest("Failed to update room");
     }
 
-    [Authorize]
     [HttpDelete("{roomId}")]
     public async Task<ActionResult> DeleteRoom(int roomId)
     {
@@ -89,7 +85,6 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return BadRequest("Failed to delete room");
     }
 
-    [Authorize]
     [HttpGet("status")]
     public async Task<ActionResult<IEnumerable<RoomWithReservationsDto>>> GetRoomsStatus(string dateStart, string dateEnd)
     {

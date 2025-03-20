@@ -1,0 +1,37 @@
+﻿<div class="pagination">
+    <button @onclick="GoToPreviousPage" disabled="@(!HasPreviousPage)">Previous</button>
+    <span>@CurrentPage</span>
+    <button @onclick="GoToNextPage" disabled="@(!HasNextPage)">Next</button>
+</div>
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int TotalPages { get; set; } = 1;
+
+    [Parameter]
+    public EventCallback<int> OnPageChanged { get; set; }
+
+    private bool HasPreviousPage => CurrentPage > 1;
+    private bool HasNextPage => CurrentPage < TotalPages;
+
+    private async Task GoToPreviousPage()
+    {
+        if (HasPreviousPage)
+        {
+            CurrentPage--;
+            await OnPageChanged.InvokeAsync(CurrentPage);
+        }
+    }
+
+    private async Task GoToNextPage()
+    {
+        if (HasNextPage)
+        {
+            CurrentPage++;
+            await OnPageChanged.InvokeAsync(CurrentPage);
+        }
+    }
+}
