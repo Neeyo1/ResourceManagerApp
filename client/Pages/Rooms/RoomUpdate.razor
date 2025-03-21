@@ -1,0 +1,110 @@
+﻿@page "/rooms/{roomId:int}/update"
+@using System.ComponentModel.DataAnnotations
+@using static client.Pages.Rooms.Rooms
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+
+<h3>Update room</h3>
+
+@if (room == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm OnValidSubmit="Submit" Model="Model">
+        <div class="container">
+            <div class="row mb-3">
+                <label>Name</label>
+                <InputText class="form-control" @bind-Value="Model.Name" />
+                <ValidationMessage For="() => Model.Name" />
+            </div>
+            <div class="row mb-3">
+                <label>Capacity</label>
+                <InputNumber class="form-control" @bind-Value="Model.Capacity" />
+                <ValidationMessage For="() => Model.Capacity" />
+            </div>
+            <div class="row mb-3">
+                <label>Room type</label>
+                <InputSelect class="form-control" @bind-Value="Model.RoomType">
+                    <option value="" disabled>-- Select Room Type --</option>
+                    <option value="ConferenceRoom">Conference room</option>
+                    <option value="MeetingRoom">Meeting room</option>
+                    <option value="TrainingRoom">Training room</option>
+                    <option value="InterviewRoom">Interview room</option>
+                </InputSelect>
+                <ValidationMessage For="() => Model.RoomType" />
+            </div>
+        </div>
+        <button class="btn btn-success" type="submit">Update</button>
+        <a class="btn btn-secondary" href="/rooms">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    private RoomDto? room;
+
+    [Parameter]
+    public int RoomId { get; set; }
+    private RoomCreateDto Model { get; set; } = new()
+    {
+        Name = string.Empty,
+        Capacity = 0,
+        RoomType = string.Empty
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoomData(RoomId);
+    }
+
+    private async Task LoadRoomData(int roomId)
+    {
+        var response = await Http.GetAsync($"rooms/{roomId}");
+        if (response.IsSuccessStatusCode)
+        {
+            room = await response.Content.ReadFromJsonAsync<RoomDto>();
+            if (room == null)
+            {
+                ToastService.ShowError("Failed to fetch room data");
+                return;
+            }
+
+            Model.Name = room.Name;
+            Model.Capacity = room.Capacity;
+            Model.RoomType = room.RoomType;
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+            NavigationManager.NavigateTo("/rooms");
+        }
+    }
+
+    private async Task Submit()
+    {
+        var response = await Http.PutAsJsonAsync($"rooms/{RoomId}", Model);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Successfully updated room");
+            NavigationManager.NavigateTo("/rooms");
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
+    }
+    
+    public class RoomCreateDto
+    {
+        [Required]
+        public required string Name { get; set; }
+
+        [Required]
+        public required int Capacity { get; set; }
+
+        [Required]
+        public required string RoomType { get; set; }
+    }
+}

@@ -13,6 +13,7 @@
 }
 else
 {
+    <a class="btn btn-success" href="/rooms/create">Create</a>
     <table class="table">
         <thead>
             <tr>
@@ -20,6 +21,7 @@ else
                 <th>Name</th>
                 <th>Capacity</th>
                 <th>RoomType</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -30,6 +32,11 @@ else
                     <td>@room.Name</td>
                     <td>@room.Capacity</td>
                     <td>@room.RoomType</td>
+                    <td>
+                        <a class="btn btn-primary" href="/rooms/@room.Id">Details</a>
+                        <a class="btn btn-secondary" href="/rooms/@room.Id/update">Update</a>
+                        <a class="btn btn-danger" href="/rooms/@room.Id/delete">Delete</a>
+                    </td>
                 </tr>
             }
         </tbody>

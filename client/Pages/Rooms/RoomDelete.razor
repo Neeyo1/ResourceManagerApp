@@ -1,0 +1,63 @@
+﻿@page "/rooms/{roomId:int}/delete"
+@using System.ComponentModel.DataAnnotations
+@using static client.Pages.Rooms.Rooms
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+
+<h3>Delete room</h3>
+
+@if (room == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <p>Are your sure your want to Delete room @room.Name?</p>
+    <button class="btn btn-danger" @onclick="DeleteRoom">Delete</button>
+    <a class="btn btn-secondary" href="/rooms">Cancel</a>
+}
+
+@code {
+    private RoomDto? room;
+
+    [Parameter]
+    public int RoomId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoomData(RoomId);
+    }
+
+    private async Task LoadRoomData(int roomId)
+    {
+        var response = await Http.GetAsync($"rooms/{roomId}");
+        if (response.IsSuccessStatusCode)
+        {
+            room = await response.Content.ReadFromJsonAsync<RoomDto>();
+            if (room == null)
+            {
+                ToastService.ShowError("Failed to fetch room data");
+            }
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+            NavigationManager.NavigateTo("/rooms");
+        }
+    }
+
+    private async Task DeleteRoom()
+    {
+        var response = await Http.DeleteAsync($"rooms/{RoomId}");
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Successfully deleted room");
+            NavigationManager.NavigateTo("/rooms");
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
+    }
+}

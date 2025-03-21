@@ -1,0 +1,70 @@
+﻿@page "/rooms/create"
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+
+<h3>Create room</h3>
+
+<EditForm OnValidSubmit="Submit" Model="Model">
+    <div class="container">
+        <div class="row mb-3">
+            <label>Name</label>
+            <InputText class="form-control" @bind-Value="Model.Name" />
+            <ValidationMessage For="() => Model.Name" />
+        </div>
+        <div class="row mb-3">
+            <label>Capacity</label>
+            <InputNumber class="form-control" @bind-Value="Model.Capacity" />
+            <ValidationMessage For="() => Model.Capacity" />
+        </div>
+        <div class="row mb-3">
+            <label>Room type</label>
+            <InputSelect class="form-control" @bind-Value="Model.RoomType">
+                <option value="" disabled>-- Select Room Type --</option>
+                <option value="ConferenceRoom">Conference room</option>
+                <option value="MeetingRoom">Meeting room</option>
+                <option value="TrainingRoom">Training room</option>
+                <option value="InterviewRoom">Interview room</option>
+            </InputSelect>
+            <ValidationMessage For="() => Model.RoomType" />
+        </div>
+    </div>
+    <button class="btn btn-success" type="submit">Create</button>
+    <a class="btn btn-secondary" href="/rooms">Cancel</a>
+</EditForm>
+
+@code {
+    private RoomCreateDto Model { get; set; } = new()
+    {
+        Name = string.Empty,
+        Capacity = 0,
+        RoomType = string.Empty
+    };
+
+    private async Task Submit()
+    {
+        var response = await Http.PostAsJsonAsync("rooms", Model);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Successfully created room");
+            NavigationManager.NavigateTo("/rooms");
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
+    }
+    
+    public class RoomCreateDto
+    {
+        [Required]
+        public required string Name { get; set; }
+
+        [Required]
+        public required int Capacity { get; set; }
+
+        [Required]
+        public required string RoomType { get; set; }
+    }
+}
