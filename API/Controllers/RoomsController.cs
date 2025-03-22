@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
-//[Authorize]
+[Authorize]
 public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiController
 {
     [HttpGet]

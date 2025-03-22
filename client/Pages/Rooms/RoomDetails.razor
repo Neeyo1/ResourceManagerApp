@@ -1,7 +1,7 @@
 ﻿@page "/rooms/{roomId:int}"
-@using System.ComponentModel.DataAnnotations
-@using static client.Pages.Rooms.Rooms
-@inject HttpClient Http
+@using client.DTOs.Room
+@using client.Helpers
+@inject ApiClient apiClient
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
 
@@ -52,7 +52,7 @@ else
 
     private async Task LoadRoomData(int roomId)
     {
-        var response = await Http.GetAsync($"rooms/{roomId}");
+        var response = await apiClient.GetAsync($"rooms/{roomId}");
         if (response.IsSuccessStatusCode)
         {
             room = await response.Content.ReadFromJsonAsync<RoomDto>();

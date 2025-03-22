@@ -1,7 +1,11 @@
 ﻿@page "/rooms"
-@inject HttpClient Http
+@inject ApiClient apiClient
+@inject IToastService ToastService
 @using System.Text.Json
 @using client.Components
+@using client.DTOs
+@using client.DTOs.Room
+@using client.Helpers
 
 <PageTitle>Rooms</PageTitle>
 
@@ -62,8 +66,7 @@ else
 
     private async Task LoadRoomsData(int page)
     {
-        var response = await Http.GetAsync($"rooms?pageNumber={currentPage}&pageSize={pageSize}");
-
+        var response = await apiClient.GetAsync($"rooms?pageNumber={currentPage}&pageSize={pageSize}");
         if (response.IsSuccessStatusCode)
         {
             rooms = await response.Content.ReadFromJsonAsync<RoomDto[]>();
@@ -90,27 +93,15 @@ else
                 totalPages = paginationData.TotalPages;
             }
         }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
     }
 
     private async Task PageChanged(int newPage)
     {
         currentPage = newPage;
         await LoadRoomsData(currentPage);
-    }
-
-    public class RoomDto
-    {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-        public int Capacity { get; set; }
-        public required string RoomType { get; set; }
-    }
-
-    public class PaginationDto
-    {
-        public int CurrentPage { get; set; }
-        public int ItemsPerPage { get; set; }
-        public int TotalItems { get; set; }
-        public int TotalPages { get; set; }
     }
 }

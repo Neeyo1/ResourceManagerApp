@@ -1,5 +1,9 @@
 ﻿@inherits LayoutComponentBase
 @using Blazored.Toast.Configuration
+@using client.Helpers
+@inject ApiAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -7,7 +11,14 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized>
+                    <button @onclick="Logout">Logout</button>
+                </Authorized>
+                <NotAuthorized>
+                    <button @onclick="Login">Login</button>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
@@ -24,3 +35,16 @@
     SuccessIcon="fa fa-thumbs-up"
     ErrorIcon="fa fa-bug"
 />
+
+@code {
+    private async Task Logout()
+    {
+        await AuthStateProvider.MarkUserAsLoggedOut();
+        NavigationManager.NavigateTo("/login", true);
+    }
+
+    private void Login()
+    {
+        NavigationManager.NavigateTo("/login", true);
+    }
+}
