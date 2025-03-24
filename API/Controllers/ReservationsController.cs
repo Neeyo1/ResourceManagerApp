@@ -10,10 +10,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize]
 public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
     UserManager<AppUser> userManager) : BaseApiController
 {
-    [Authorize]
     [HttpGet("rooms")]
     public async Task<ActionResult<PagedList<RoomReservationDto>>> GetRoomReservations(
         [FromQuery] RoomReservationParams roomReservationParams)
@@ -24,7 +24,6 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         return Ok(roomReservations);
     }
 
-    [Authorize]
     [HttpGet("rooms/{roomReservationId}")]
     public async Task<ActionResult<RoomReservationDto>> GetRoomReservation(int roomReservationId)
     {
@@ -37,7 +36,6 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         return Ok(mapper.Map<RoomReservationDto>(roomReservation));
     }
 
-    [Authorize]
     [HttpPost("rooms")]
     public async Task<ActionResult<RoomReservationDto>> CreateRoomReservation(RoomReservationCreateDto roomReservationCreateDto)
     {
@@ -72,7 +70,6 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         return BadRequest("Failed to create roomReservation");
     }
 
-    [Authorize]
     [HttpPut("rooms/{roomReservationId}")]
     public async Task<ActionResult<RoomReservationDto>> UpdateRoomReservation(RoomReservationUpdateDto roomReservationUpdateDto, int roomReservationId)
     {
@@ -116,7 +113,6 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         return BadRequest("Failed to update roomReservation");
     }
 
-    [Authorize]
     [HttpDelete("rooms/{roomReservationId}")]
     public async Task<ActionResult> DeleteRoomReservation(int roomReservationId)
     {

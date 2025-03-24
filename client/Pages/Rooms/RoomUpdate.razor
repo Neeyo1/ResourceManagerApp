@@ -1,9 +1,12 @@
 ﻿@page "/rooms/{roomId:int}/update"
+@using Microsoft.AspNetCore.Authorization
 @using client.DTOs.Room
 @using client.Helpers
 @inject ApiClient apiClient
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
+
+@attribute [Authorize(Policy = "RequireAdminRole")]
 
 <h3>Update room</h3>
 

@@ -4,6 +4,7 @@ using client;
 using Blazored.Toast;
 using Microsoft.AspNetCore.Components.Authorization;
 using client.Helpers;
+using Blazored.LocalStorage;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -20,5 +21,11 @@ builder.Services.AddScoped(sp =>
     }
 );
 builder.Services.AddBlazoredToast();
+builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddAuthorizationCore(options =>
+{
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireManagerRole", policy => policy.RequireRole("Manager", "Admin"));
+});
 
 await builder.Build().RunAsync();

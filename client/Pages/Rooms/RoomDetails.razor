@@ -1,9 +1,12 @@
 ﻿@page "/rooms/{roomId:int}"
+@using Microsoft.AspNetCore.Authorization
 @using client.DTOs.Room
 @using client.Helpers
 @inject ApiClient apiClient
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
+
+@attribute [Authorize]
 
 <h3>Room details</h3>
 
@@ -31,8 +34,10 @@ else
                 <td>@room.RoomType</td>
                 <td>
                     <a class="btn btn-primary">View reservations</a>
-                    <a class="btn btn-secondary" href="/rooms/@room.Id/update">Update</a>
-                    <a class="btn btn-danger" href="/rooms/@room.Id/delete">Delete</a>
+                    <AuthorizeView Policy="RequireAdminRole">
+                        <a class="btn btn-secondary" href="/rooms/@room.Id/update">Update</a>
+                        <a class="btn btn-danger" href="/rooms/@room.Id/delete">Delete</a>
+                    </AuthorizeView>
                 </td>
             </tr>
         </tbody>

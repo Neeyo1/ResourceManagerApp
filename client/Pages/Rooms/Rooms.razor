@@ -2,10 +2,13 @@
 @inject ApiClient apiClient
 @inject IToastService ToastService
 @using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
 @using client.Components
 @using client.DTOs
 @using client.DTOs.Room
 @using client.Helpers
+
+@attribute [Authorize]
 
 <PageTitle>Rooms</PageTitle>
 
@@ -17,7 +20,10 @@
 }
 else
 {
-    <a class="btn btn-success" href="/rooms/create">Create</a>
+    <AuthorizeView Policy="RequireAdminRole">
+        <a class="btn btn-success" href="/rooms/create">Create</a>
+    </AuthorizeView>
+
     <table class="table">
         <thead>
             <tr>
@@ -38,8 +44,10 @@ else
                     <td>@room.RoomType</td>
                     <td>
                         <a class="btn btn-primary" href="/rooms/@room.Id">Details</a>
-                        <a class="btn btn-secondary" href="/rooms/@room.Id/update">Update</a>
-                        <a class="btn btn-danger" href="/rooms/@room.Id/delete">Delete</a>
+                        <AuthorizeView Policy="RequireAdminRole">
+                            <a class="btn btn-secondary" href="/rooms/@room.Id/update">Update</a>
+                            <a class="btn btn-danger" href="/rooms/@room.Id/delete">Delete</a>
+                        </AuthorizeView>
                     </td>
                 </tr>
             }

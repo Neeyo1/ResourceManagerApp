@@ -33,6 +33,7 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return Ok(mapper.Map<RoomDto>(room));
     }
 
+    [Authorize(Policy = "RequireAdminRole")]
     [HttpPost]
     public async Task<ActionResult<RoomDto>> CreateRoom(RoomCreateDto roomCreateDto)
     {
@@ -47,6 +48,7 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return BadRequest("Failed to create room");
     }
 
+    [Authorize(Policy = "RequireAdminRole")]
     [HttpPut("{roomId}")]
     public async Task<ActionResult<RoomDto>> UpdateRoom(RoomUpdateDto roomUpdateDto, int roomId)
     {
@@ -67,6 +69,7 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         return BadRequest("Failed to update room");
     }
 
+    [Authorize(Policy = "RequireAdminRole")]
     [HttpDelete("{roomId}")]
     public async Task<ActionResult> DeleteRoom(int roomId)
     {

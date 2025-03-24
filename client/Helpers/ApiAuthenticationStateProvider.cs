@@ -1,28 +1,29 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
+using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.JSInterop;
 
 namespace client.Helpers;
 
-public class ApiAuthenticationStateProvider(IJSRuntime jsRuntime) : AuthenticationStateProvider
+public class ApiAuthenticationStateProvider(ILocalStorageService localStorage) : AuthenticationStateProvider
 {
     public async Task MarkUserAsAuthenticated(string token)
     {
-        await jsRuntime.InvokeVoidAsync("localStorage.setItem", "accessToken", token);
+        await localStorage.SetItemAsStringAsync("accessToken", token);
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
     public async Task MarkUserAsLoggedOut()
     {
-        await jsRuntime.InvokeVoidAsync("localStorage.removeItem", "accessToken");
+        await localStorage.RemoveItemAsync("accessToken");
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "accessToken");
-        if (string.IsNullOrEmpty(token))
+        var token = await localStorage.GetItemAsStringAsync("accessToken");
+        if (string.IsNullOrEmpty(token) || IsTokenExpired(token))
         {
             var currentUser = new ClaimsPrincipal(new ClaimsIdentity());
             return new AuthenticationState(currentUser);
@@ -33,18 +34,23 @@ public class ApiAuthenticationStateProvider(IJSRuntime jsRuntime) : Authenticati
         return new AuthenticationState(user);
     }
 
-    private static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
+    private static IEnumerable<Claim> ParseClaimsFromJwt(string token)
     {
-        var payload = jwt.Split('.')[1];
-        var jsonBytes = Convert.FromBase64String(payload);
-        var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
-        if (keyValuePairs == null)
+        var jwt = new JwtSecurityTokenHandler().ReadToken(token) as JwtSecurityToken;
+        if (jwt == null)
         {
             return [];
         }
+        return jwt.Claims;
+    }
 
-        return keyValuePairs
-            .Where(kvp => kvp.Value != null)
-            .Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? ""));
+    private static bool IsTokenExpired(string token)
+    {
+        var jwt = new JwtSecurityTokenHandler().ReadToken(token) as JwtSecurityToken;
+        if (jwt == null)
+        {
+            return false;
+        }
+        return jwt.ValidTo < DateTime.UtcNow;
     }
 }

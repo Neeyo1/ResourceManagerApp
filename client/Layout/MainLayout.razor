@@ -40,11 +40,11 @@
     private async Task Logout()
     {
         await AuthStateProvider.MarkUserAsLoggedOut();
-        NavigationManager.NavigateTo("/login", true);
+        NavigationManager.NavigateTo("/", true);
     }
 
     private void Login()
     {
-        NavigationManager.NavigateTo("/login", true);
+        NavigationManager.NavigateTo("/login");
     }
 }
