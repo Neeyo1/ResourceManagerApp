@@ -1,10 +1,16 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.JSInterop;
+using System.Text;
+using System.Text.Json;
+using Blazored.LocalStorage;
+using Blazored.Toast.Services;
+using client.DTOs.Account;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
+using static client.Helpers.JwtHelper;
 
 namespace client.Helpers;
 
-public class ApiClient(HttpClient httpClient, IJSRuntime jsRuntime)
+public class ApiClient(HttpClient httpClient, ILocalStorageService localStorage, IToastService toastService)
 {
     public async Task<HttpResponseMessage> GetAsync(string url)
     {
@@ -16,6 +22,18 @@ public class ApiClient(HttpClient httpClient, IJSRuntime jsRuntime)
     {
         await AddTokenToRequest();
         return await httpClient.PostAsJsonAsync(url, model);
+    }
+
+    public async Task<HttpResponseMessage> PostAsJsonWithCredentialsAsync<T>(string url, T model)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json")
+        };
+
+        request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+
+        return await httpClient.SendAsync(request);
     }
 
     public async Task<HttpResponseMessage> PutAsJsonAsync<T>(string url, T model)
@@ -32,10 +50,48 @@ public class ApiClient(HttpClient httpClient, IJSRuntime jsRuntime)
 
     private async Task AddTokenToRequest()
     {
-        var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "accessToken");
-        if (token != null)
+        var token = await localStorage.GetItemAsStringAsync("accessToken");
+        if (token == null)
         {
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            toastService.ShowError("Failed to get access token");
+            return;
         }
+        if (IsTokenExpired(token))
+        {
+            var newToken = await RefreshTokenAsync(token);
+            if (newToken == null)
+            {
+                toastService.ShowError("Failed to refresh access token");
+                return;
+            }
+            else
+            {
+                token = newToken;
+                await localStorage.SetItemAsStringAsync("accessToken", token);
+            }
+        }
+
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    public async Task<string?> RefreshTokenAsync(string token)
+    {
+        var tokenDto = new TokenDto
+        {
+            Token = token
+        };
+
+        var response = await PostAsJsonWithCredentialsAsync("account/refresh", tokenDto);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<UserDto>();
+        if (result == null)
+        {
+            return null;
+        }
+        return result.Token;
     }
 }

@@ -1,6 +1,7 @@
 ﻿@using System.ComponentModel.DataAnnotations
+@using client.DTOs.Account
 @using client.Helpers
-@inject HttpClient Http
+@inject ApiClient apiClient
 @inject ApiAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
@@ -21,36 +22,21 @@
 
     private async Task LoginUser()
     {
-        var response = await Http.PostAsJsonAsync("account/login", Model);
+        var response = await apiClient.PostAsJsonWithCredentialsAsync("account/login", Model);
         if (response.IsSuccessStatusCode)
         {
-            var token = await response.Content.ReadFromJsonAsync<TokenDto>();
-            if (token == null)
+            var user = await response.Content.ReadFromJsonAsync<UserDto>();
+            if (user == null || user.Token == null)
             {
-                ToastService.ShowError("Failed to fetch token");
+                ToastService.ShowError("Failed to fetch user data");
                 return;
             }
-            await AuthStateProvider.MarkUserAsAuthenticated(token.Token);
+            await AuthStateProvider.MarkUserAsAuthenticated(user.Token);
             NavigationManager.NavigateTo("/", true);
         }
         else
         {
             ToastService.ShowError(response.StatusCode.ToString());
         }
-    }
-    
-    public class LoginDto
-    {
-        [Required]
-        public required string Email { get; set; }
-
-        [Required]
-        public required string Password { get; set; }
-    }
-
-    public class TokenDto
-    {
-        [Required]
-        public required string Token { get; set; }
     }
 }

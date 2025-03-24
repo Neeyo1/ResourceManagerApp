@@ -10,7 +10,7 @@ public static class HttpExtensions
         context.Response.Cookies.Append("refreshToken", refreshToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Expires = DateTime.UtcNow.AddDays(7),
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
