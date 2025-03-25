@@ -1,3 +1,4 @@
+using API.DTOs;
 using API.DTOs.Reservation;
 using API.DTOs.Room;
 using API.Entities;
@@ -76,31 +77,74 @@ public class RoomRepository(DataContext context, IMapper mapper) : IRoomReposito
             .FirstOrDefaultAsync(x => x.Id == roomId);
     }
 
-    public async Task<IEnumerable<RoomWithReservationsDto>> GetRoomsWithReservationsByIdAsync(
-        DateTime start, DateTime end)
+    public async Task<IEnumerable<RoomWithReservationsDto>> GetRoomsStatusAsync(RoomStatusParams roomStatusParams)
     {
-        var rooms = await context.Rooms
+        var query = context.Rooms
             .Include(x => x.RoomReservations)
             .ThenInclude(x => x.User)
-            .ToListAsync();
+            .Select(room => new RoomWithReservations
+            {
+                Id = room.Id,
+                Name = room.Name,
+                Capacity = room.Capacity,
+                RoomType = room.RoomType,
+                RoomStatus = room.RoomReservations
+                    .Any(x => roomStatusParams.Start < x.ReservedTo && roomStatusParams.End > x.ReservedFrom)
+                    ? RoomStatus.Unavaiable
+                    : RoomStatus.Avaiable,
+                RoomReservations = room.RoomReservations
+                    .Where(x => roomStatusParams.Start < x.ReservedTo && roomStatusParams.End > x.ReservedFrom)
+                    .Select(x => new RoomReservationDto
+                    {
+                        Id = x.Id,
+                        ReservedFrom = x.ReservedFrom,
+                        ReservedTo = x.ReservedTo,
+                        ReservedBy = mapper.Map<MemberDto>(x.User)
+                    }).ToList()
+            });
 
-        return rooms.Select(room =>
+        if (roomStatusParams.Name != null)
         {
-            var reservations = room.RoomReservations
-                .Where(x => start < x.ReservedTo && end > x.ReservedFrom)
-                .ToList();
+            query = query.Where(x => x.Name.Contains(roomStatusParams.Name));
+        }
 
-            var roomStatus = reservations.Count == 0
-                ? RoomStatus.Avaiable
-                : reservations.Any(x => x.ReservedFrom > start || x.ReservedTo < end)
-                    ? RoomStatus.PartiallyAvaiable
-                    : RoomStatus.Unavaiable;
+        if (roomStatusParams.MinCapacity != null)
+        {
+            query = query.Where(x => x.Capacity >= roomStatusParams.MinCapacity);
+        }
 
-            var dto = mapper.Map<RoomWithReservationsDto>(room);
-            dto.RoomStatus = roomStatus.ToString();
-            dto.RoomReservations = mapper.Map<List<RoomReservationDto>>(reservations);
+        if (roomStatusParams.MaxCapacity != null)
+        {
+            query = query.Where(x => x.Capacity <= roomStatusParams.MaxCapacity);
+        }
 
-            return dto;
-        }).ToList();
+        query = roomStatusParams.Type switch
+        {
+            "conference-room" => query.Where(x => x.RoomType == RoomType.ConferenceRoom),
+            "interview-room" => query.Where(x => x.RoomType == RoomType.InterviewRoom),
+            "meeting-room" => query.Where(x => x.RoomType == RoomType.MeetingRoom),
+            "training-room" => query.Where(x => x.RoomType == RoomType.TrainingRoom),
+            _ => query //"all"
+        };
+
+        query = roomStatusParams.OrderBy switch
+        {
+            "name" => query.OrderBy(x => x.Name),
+            "name-desc" => query.OrderByDescending(x => x.Name),
+            "capacity" => query.OrderBy(x => x.Capacity),
+            "capacity-desc" => query.OrderByDescending(x => x.Capacity),
+            _ => query.OrderBy(x => x.Name) //"name"
+        };
+
+        query = roomStatusParams.Status switch
+        {
+            "avaiable" => query.Where(x => x.RoomStatus == RoomStatus.Avaiable),
+            "unavaiable" => query.Where(x => x.RoomStatus == RoomStatus.Unavaiable),
+            _ => query //"all"
+        };
+
+        return await PagedList<RoomWithReservationsDto>.CreateAsync(
+            query.ProjectTo<RoomWithReservationsDto>(mapper.ConfigurationProvider), 
+            roomStatusParams.PageNumber, roomStatusParams.PageSize);
     }
 }

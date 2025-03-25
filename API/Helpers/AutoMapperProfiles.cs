@@ -19,7 +19,7 @@ public class AutoMapperProfiles : Profile
         CreateMap<RoomReservation, RoomReservationDto>()
             .ForMember(x => x.ReservedBy, y => y.MapFrom(z => z.User));
         CreateMap<RoomReservationCreateDto, RoomReservation>();
-        CreateMap<Room, RoomWithReservationsDto>();
+        CreateMap<RoomWithReservations, RoomWithReservationsDto>();
         
         CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
         CreateMap<DateTime?, DateTime?>().ConvertUsing(d => d.HasValue 

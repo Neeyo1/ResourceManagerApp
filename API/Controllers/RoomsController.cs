@@ -89,20 +89,10 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
     }
 
     [HttpGet("status")]
-    public async Task<ActionResult<IEnumerable<RoomWithReservationsDto>>> GetRoomsStatus(string dateStart, string dateEnd)
+    public async Task<ActionResult<IEnumerable<RoomWithReservationsDto>>> GetRoomsStatus(
+        [FromQuery] RoomStatusParams roomStatusParams)
     {
-        if (!DateTime.TryParse(dateStart, out var start) || !DateTime.TryParse(dateEnd, out var end))
-        {
-            return BadRequest("Invalid date format");
-        }
-
-        start = DateTime.SpecifyKind(start, DateTimeKind.Utc);
-        end = DateTime.SpecifyKind(end, DateTimeKind.Utc);
-
-        Console.WriteLine(start);
-        Console.WriteLine(end);
-
-        var roomsStatus = await unitOfWork.RoomRepository.GetRoomsWithReservationsByIdAsync(start, end);
+        var roomsStatus = await unitOfWork.RoomRepository.GetRoomsStatusAsync(roomStatusParams);
         
         return Ok(roomsStatus);
     }
