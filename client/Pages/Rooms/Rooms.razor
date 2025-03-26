@@ -44,6 +44,9 @@ else
                     <td>@room.RoomType</td>
                     <td>
                         <a class="btn btn-primary" href="/rooms/@room.Id">Details</a>
+                        <AuthorizeView>
+                            <a class="btn btn-primary" href="/rooms/@room.Id/reserve">Make reservation</a>
+                        </AuthorizeView>
                         <AuthorizeView Policy="RequireAdminRole">
                             <a class="btn btn-secondary" href="/rooms/@room.Id/update">Update</a>
                             <a class="btn btn-danger" href="/rooms/@room.Id/delete">Delete</a>

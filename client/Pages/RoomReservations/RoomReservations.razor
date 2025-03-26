@@ -1,0 +1,129 @@
+﻿@page "/reservations/rooms"
+@inject ApiClient apiClient
+@inject IToastService ToastService
+@inject ApiAuthenticationStateProvider apiAuthenticationStateProvider
+@using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using client.Components
+@using client.DTOs
+@using client.DTOs.Reservation.Room
+@using client.Helpers
+
+@attribute [Authorize]
+
+<PageTitle>Room reservations</PageTitle>
+
+<h1>Room reservations</h1>
+
+@if (roomReservations == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Reserved from</th>
+                <th>Reserved to</th>
+                <th>Reserved by</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var roomReservation in roomReservations)
+            {
+                <tr>
+                    <td>@roomReservation.Id</td>
+                    <td>@roomReservation.ReservedFrom.ToLocalTime()</td>
+                    <td>@roomReservation.ReservedTo.ToLocalTime()</td>
+                    <td>@roomReservation.ReservedBy.FirstName @roomReservation.ReservedBy.LastName</td>
+                    <td>
+                        @if (isAdmin || userId == @roomReservation.ReservedBy.Id)
+                        {
+                            <a class="btn btn-secondary" href="/reservations/rooms/@roomReservation.Id/update">Update</a>
+                            <a class="btn btn-danger" href="/reservations/rooms/@roomReservation.Id/delete">Delete</a>
+                        }                    
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <Pagination
+        CurrentPage="currentPage"
+        TotalPages="totalPages"
+        OnPageChanged="PageChanged"
+    />
+}
+
+@code {
+    private RoomReservationDto[]? roomReservations;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private int pageSize = 10;
+    private bool isAdmin = false;
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await apiAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity!.IsAuthenticated)
+        {
+            isAdmin = user.IsInRole("Admin");
+
+            var userIdClaim = user.FindFirst("nameid");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+        }
+
+        await LoadRoomReservationsData(currentPage);
+    }
+
+    private async Task LoadRoomReservationsData(int page)
+    {
+        var response = await apiClient.GetAsync($"reservations/rooms?pageNumber={currentPage}&pageSize={pageSize}");
+        if (response.IsSuccessStatusCode)
+        {
+            roomReservations = await response.Content.ReadFromJsonAsync<RoomReservationDto[]>();
+
+            if (response.Headers.Contains("Pagination"))
+            {
+                var paginationHeader = response.Headers.GetValues("Pagination").FirstOrDefault();
+                if (paginationHeader == null)
+                {
+                    return;
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var paginationData = JsonSerializer.Deserialize<PaginationDto>(paginationHeader, options);
+                if (paginationData == null)
+                {
+                    return;
+                }
+
+                totalPages = paginationData.TotalPages;
+            }
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
+    }
+
+    private async Task PageChanged(int newPage)
+    {
+        currentPage = newPage;
+        await LoadRoomReservationsData(currentPage);
+    }
+}

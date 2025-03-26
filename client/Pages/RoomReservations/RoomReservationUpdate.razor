@@ -1,0 +1,116 @@
+﻿@page "/reservations/rooms/{roomReservationId:int}/update"
+@using Microsoft.AspNetCore.Authorization
+@using client.DTOs.Reservation.Room
+@using client.Helpers
+@inject ApiClient apiClient
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+@inject ApiAuthenticationStateProvider apiAuthenticationStateProvider
+
+@attribute [Authorize]
+
+<h3>Update room reservation</h3>
+
+@if (roomReservation == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if(!isAdmin && userId != roomReservation.ReservedBy.Id)
+{
+    <p><em>Unauthorized!</em></p>
+}
+else
+{
+    <EditForm OnValidSubmit="Submit" Model="Model">
+        <div class="container">
+            <div class="row mb-3">
+                <label>Reserved from</label>
+                <InputText class="form-control" @bind-Value="Model.ReservedFromString" />
+                <ValidationMessage For="() => Model.ReservedFromString" />
+            </div>
+            <div class="row mb-3">
+                <label>Reserved to</label>
+                <InputText class="form-control" @bind-Value="Model.ReservedToString" />
+                <ValidationMessage For="() => Model.ReservedToString" />
+            </div>
+        </div>
+        <button class="btn btn-success" type="submit">Update</button>
+        <a class="btn btn-secondary" href="/reservations/rooms">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    private RoomReservationDto? roomReservation;
+
+    [Parameter]
+    public int roomReservationId { get; set; }
+    private RoomReservationCreateDto Model { get; set; } = new();
+    private bool isAdmin = false;
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await apiAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity!.IsAuthenticated)
+        {
+            isAdmin = user.IsInRole("Admin");
+
+            var userIdClaim = user.FindFirst("nameid");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+        }
+
+        await LoadRoomReservationData();
+    }
+
+    private async Task LoadRoomReservationData()
+    {
+        var response = await apiClient.GetAsync($"reservations/rooms/{roomReservationId}");
+        if (response.IsSuccessStatusCode)
+        {
+            roomReservation = await response.Content.ReadFromJsonAsync<RoomReservationDto>();
+            if (roomReservation == null)
+            {
+                ToastService.ShowError("Failed to fetch room reservation data");
+                return;
+            }
+
+            Model.ReservedFromString = roomReservation.ReservedFrom.ToLocalTime().ToString();
+            Model.ReservedToString = roomReservation.ReservedTo.ToLocalTime().ToString();
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+            NavigationManager.NavigateTo("/reservations/rooms");
+        }
+    }
+
+    private async Task Submit()
+    {
+        var isReservedFromValid = DateTime.TryParse(Model.ReservedFromString, out var reservedFromParsed);
+        var isReservedToValid = DateTime.TryParse(Model.ReservedToString, out var reservedToParsed);
+        if (!isReservedFromValid || !isReservedToValid)
+        {
+            ToastService.ShowError("Failed to parse dates");
+            return;
+        }
+
+        Model.ReservedFrom = reservedFromParsed.ToUniversalTime();
+        Model.ReservedTo = reservedToParsed.ToUniversalTime();
+
+        var response = await apiClient.PutAsJsonAsync($"reservations/rooms/{roomReservationId}", Model);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Successfully updated room reservation");
+            NavigationManager.NavigateTo("/reservations/rooms");
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
+    }
+}

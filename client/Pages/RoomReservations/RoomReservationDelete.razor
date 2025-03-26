@@ -1,0 +1,87 @@
+﻿@page "/reservations/rooms/{roomReservationId:int}/delete"
+@using Microsoft.AspNetCore.Authorization
+@using client.DTOs.Reservation.Room
+@using client.Helpers
+@inject ApiClient apiClient
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+@inject ApiAuthenticationStateProvider apiAuthenticationStateProvider
+
+@attribute [Authorize]
+
+<h3>Delete room</h3>
+
+@if (roomReservation == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if(!isAdmin && userId != roomReservation.ReservedBy.Id)
+{
+    <p><em>Unauthorized!</em></p>
+}
+else
+{
+    <p>Are your sure your want to Delete room reservation from @roomReservation.ReservedFrom to @roomReservation.ReservedTo?</p>
+    <button class="btn btn-danger" @onclick="DeleteRoom">Delete</button>
+    <a class="btn btn-secondary" href="/reservations/rooms">Cancel</a>
+}
+
+@code {
+    private RoomReservationDto? roomReservation;
+
+    [Parameter]
+    public int roomReservationId { get; set; }
+    private bool isAdmin = false;
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await apiAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity!.IsAuthenticated)
+        {
+            isAdmin = user.IsInRole("Admin");
+
+            var userIdClaim = user.FindFirst("nameid");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+        }
+
+        await LoadRoomReservationData();
+    }
+
+    private async Task LoadRoomReservationData()
+    {
+        var response = await apiClient.GetAsync($"reservations/rooms/{roomReservationId}");
+        if (response.IsSuccessStatusCode)
+        {
+            roomReservation = await response.Content.ReadFromJsonAsync<RoomReservationDto>();
+            if (roomReservation == null)
+            {
+                ToastService.ShowError("Failed to fetch room reservation data");
+            }
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+            NavigationManager.NavigateTo("/reservations/rooms");
+        }
+    }
+
+    private async Task DeleteRoom()
+    {
+        var response = await apiClient.DeleteAsync($"reservations/rooms/{roomReservationId}");
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Successfully deleted room reservation");
+            NavigationManager.NavigateTo("/reservations/rooms");
+        }
+        else
+        {
+            ToastService.ShowError(response.StatusCode.ToString());
+        }
+    }
+}

@@ -1,4 +1,4 @@
-namespace API.DTOs;
+namespace client.DTOs;
 
 public class MemberDto
 {
