@@ -77,7 +77,7 @@ public class RoomRepository(DataContext context, IMapper mapper) : IRoomReposito
             .FirstOrDefaultAsync(x => x.Id == roomId);
     }
 
-    public async Task<IEnumerable<RoomWithReservationsDto>> GetRoomsStatusAsync(RoomStatusParams roomStatusParams)
+    public async Task<PagedList<RoomWithReservationsDto>> GetRoomsStatusAsync(RoomStatusParams roomStatusParams)
     {
         var query = context.Rooms
             .Include(x => x.RoomReservations)

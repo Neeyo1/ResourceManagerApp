@@ -11,5 +11,5 @@ public interface IRoomRepository
     Task<PagedList<RoomDto>> GetRoomsAsync(RoomParams roomParams);
     Task<Room?> GetRoomByIdAsync(int roomId);
     Task<Room?> GetRoomWithDetailsByIdAsync(int roomId);
-    Task<IEnumerable<RoomWithReservationsDto>> GetRoomsStatusAsync(RoomStatusParams roomStatusParams);
+    Task<PagedList<RoomWithReservationsDto>> GetRoomsStatusAsync(RoomStatusParams roomStatusParams);
 }

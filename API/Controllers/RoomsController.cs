@@ -89,10 +89,11 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
     }
 
     [HttpGet("status")]
-    public async Task<ActionResult<IEnumerable<RoomWithReservationsDto>>> GetRoomsStatus(
+    public async Task<ActionResult<PagedList<RoomWithReservationsDto>>> GetRoomsStatus(
         [FromQuery] RoomStatusParams roomStatusParams)
     {
         var roomsStatus = await unitOfWork.RoomRepository.GetRoomsStatusAsync(roomStatusParams);
+        Response.AddPaginationHeader(roomsStatus);
         
         return Ok(roomsStatus);
     }
