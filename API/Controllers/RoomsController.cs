@@ -1,4 +1,4 @@
-using API.DTOs.Room;
+using shared.DTOs.Room;
 using API.Entities;
 using API.Extensions;
 using API.Helpers;

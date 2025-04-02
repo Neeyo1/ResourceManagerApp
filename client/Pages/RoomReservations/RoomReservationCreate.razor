@@ -1,7 +1,7 @@
 ﻿@page "/rooms/{roomId:int}/reserve"
 @using Microsoft.AspNetCore.Authorization
-@using client.DTOs.Reservation.Room
-@using client.DTOs.Room
+@using System.ComponentModel.DataAnnotations
+@using shared.DTOs.Room
 @using client.Helpers
 @inject ApiClient apiClient
 @inject NavigationManager NavigationManager
@@ -95,5 +95,23 @@ else
         {
             ToastService.ShowError(response.StatusCode.ToString());
         }
+    }
+
+    private class RoomReservationCreateDto
+    {
+        [Required]
+        public DateTime ReservedFrom { get; set; }
+
+        [Required]
+        public string? ReservedFromString { get; set; }
+
+        [Required]
+        public DateTime ReservedTo { get; set; }
+
+        [Required]
+        public string? ReservedToString { get; set; }
+
+        [Required]
+        public int RoomId { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-using API.DTOs.Reservation;
+using shared.DTOs.Reservation;
 using API.Entities;
 using API.Extensions;
 using API.Helpers;

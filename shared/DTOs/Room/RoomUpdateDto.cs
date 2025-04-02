@@ -1,6 +1,4 @@
-using API.Entities;
-
-namespace API.DTOs.Room;
+namespace shared.DTOs.Room;
 
 public class RoomUpdateDto
 {

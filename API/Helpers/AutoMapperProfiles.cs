@@ -1,7 +1,7 @@
-using API.DTOs;
-using API.DTOs.Account;
-using API.DTOs.Reservation;
-using API.DTOs.Room;
+using shared.DTOs;
+using shared.DTOs.Account;
+using shared.DTOs.Reservation;
+using shared.DTOs.Room;
 using API.Entities;
 using AutoMapper;
 

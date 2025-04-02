@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using API.DTOs.Account;
+using shared.DTOs.Account;
 using API.Entities;
 using API.Extensions;
 using API.Interfaces;

@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Blazored.LocalStorage;
 using Blazored.Toast.Services;
-using client.DTOs.Account;
+using shared.DTOs.Account;
 using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using static client.Helpers.JwtHelper;
 

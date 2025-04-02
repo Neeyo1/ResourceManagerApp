@@ -1,4 +1,4 @@
-namespace client.DTOs.Reservation.Room;
+namespace shared.DTOs.Reservation;
 
 public class RoomReservationDto
 {

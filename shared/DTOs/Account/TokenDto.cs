@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace client.DTOs.Account;
+namespace shared.DTOs.Account;
 
 public class TokenDto
 {

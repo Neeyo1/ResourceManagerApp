@@ -1,6 +1,6 @@
-using API.DTOs.Reservation;
+using shared.DTOs.Reservation;
 
-namespace API.DTOs.Room;
+namespace shared.DTOs.Room;
 
 public class RoomWithReservationsDto
 {

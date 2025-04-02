@@ -1,4 +1,4 @@
-namespace API.DTOs.Reservation;
+namespace shared.DTOs.Reservation;
 
 public class RoomReservationUpdateDto
 {

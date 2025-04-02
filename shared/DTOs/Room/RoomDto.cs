@@ -1,4 +1,4 @@
-namespace API.DTOs.Room;
+namespace shared.DTOs.Room;
 
 public class RoomDto
 {

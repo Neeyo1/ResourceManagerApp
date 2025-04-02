@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace API.DTOs.Reservation;
+namespace shared.DTOs.Reservation;
 
 public class RoomReservationCreateDto
 {

@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using API.Entities;
 
-namespace API.DTOs.Room;
+namespace shared.DTOs.Room;
 
 public class RoomCreateDto
 {

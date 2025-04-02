@@ -1,4 +1,4 @@
-namespace client.DTOs.Account;
+namespace shared.DTOs.Account;
 
 public class UserDto
 {
