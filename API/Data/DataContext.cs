@@ -1,4 +1,5 @@
 using API.Entities;
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,9 @@ public class DataContext(DbContextOptions options) : IdentityDbContext<AppUser, 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.AddInboxStateEntity();
+        builder.AddOutboxStateEntity();
+        builder.AddOutboxMessageEntity();
 
         //AppUser - AppRole
         builder.Entity<AppUser>()

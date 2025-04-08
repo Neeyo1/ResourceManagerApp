@@ -3,11 +3,15 @@ using API.Data;
 using API.Entities;
 using API.Interfaces;
 using API.Services;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Nest;
+using Npgsql;
+using Polly;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,8 +34,7 @@ builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 
 builder.Services.AddDbContext<DataContext>(opt =>
 {
-    opt.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 40)));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
 builder.Services.AddIdentityCore<AppUser>()
@@ -67,10 +70,51 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     })
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
 
-
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"))
     .AddPolicy("RequireManagerRole", policy => policy.RequireRole("Manager", "Admin"));
+
+builder.Services.AddMassTransit(x => 
+{
+    //x.AddConsumersFromNamespaceContaining<..Consumer>();
+
+    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("app", false));
+
+    x.AddEntityFrameworkOutbox<DataContext>(y =>
+    {
+        y.QueryDelay = TimeSpan.FromSeconds(10);
+        y.UsePostgres();
+        y.UseBusOutbox();
+    });
+
+    x.UsingRabbitMq((context, conf) =>
+    {
+        conf.Host(builder.Configuration["RabbitMq:Host"], "/", host =>
+        {
+            host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest")!);
+            host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest")!);
+        });
+        
+        conf.ConfigureEndpoints(context);
+    });
+});
+
+var retryPolicyElastic = Polly.Policy
+    .Handle<Exception>()
+    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(5));
+
+builder.Services.AddSingleton<IElasticClient>(sp =>
+    retryPolicyElastic.Execute(() => 
+    {
+        var uri = builder.Configuration.GetValue("Elasticsearch:Uri", "http://localhost:9200")!;
+        var settings = new ConnectionSettings(new Uri(uri))
+            .DefaultIndex("app")
+            .DisableDirectStreaming()
+            .PrettyJson();
+
+        return new ElasticClient(settings);
+    })
+);
 
 builder.Host.UseSerilog((context, config) =>
 {
@@ -98,21 +142,28 @@ app.UseSerilogRequestLogging();
 
 app.MapControllers();
 
-using var scope = app.Services.CreateScope();
-var services = scope.ServiceProvider;
-try
+var retryPolicy = Polly.Policy
+    .Handle<NpgsqlException>()
+    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(5));
+
+
+var result = retryPolicy.ExecuteAndCapture(async () => 
 {
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
     var context = services.GetRequiredService<DataContext>();
     var userManager = services.GetRequiredService<UserManager<AppUser>>();
     var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
     var logger = services.GetRequiredService<ILogger<DbInitializer>>();
     await context.Database.MigrateAsync();
     await DbInitializer.InitDb(context, userManager, roleManager, logger);
-}
-catch (Exception ex)
+});
+
+if (result.Outcome == OutcomeType.Failure && result.FinalException is not null)
 {
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "An error occured during seeding process");
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<DbInitializer>>();
+    logger.LogError(result.FinalException, "An error occured during seeding process");
 }
 
 app.Run();
