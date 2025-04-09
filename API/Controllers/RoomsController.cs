@@ -6,11 +6,14 @@ using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MassTransit;
+using shared.Contracts.Room;
 
 namespace API.Controllers;
 
 [Authorize]
-public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiController
+public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper,
+    IPublishEndpoint publishEndpoint) : BaseApiController
 {
     [HttpGet]
     public async Task<ActionResult<PagedList<RoomDto>>> GetRooms([FromQuery] RoomParams roomParams)
@@ -40,10 +43,13 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper) : BaseApiCo
         var room = mapper.Map<Room>(roomCreateDto);
 
         unitOfWork.RoomRepository.AddRoom(room);
+        
+        var roomDto = mapper.Map<RoomDto>(room);
+        await publishEndpoint.Publish(mapper.Map<RoomCreated>(roomDto));
 
         if (await unitOfWork.Complete())
         {
-            return CreatedAtAction(nameof(GetRoom), new {roomId = room.Id}, mapper.Map<RoomDto>(room));
+            return CreatedAtAction(nameof(GetRoom), new {roomId = room.Id}, roomDto);
         }
         return BadRequest("Failed to create room");
     }

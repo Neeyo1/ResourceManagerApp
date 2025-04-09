@@ -27,8 +27,4 @@
     <ProjectReference Include="..\shared\shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Consumers\" />
-  </ItemGroup>
-
 </Project>

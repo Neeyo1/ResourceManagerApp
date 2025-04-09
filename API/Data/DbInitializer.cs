@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using API.Entities;
+using API.Entities.ElasticSearch;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Nest;
 
 namespace API.Data;
 
@@ -13,6 +15,51 @@ public class DbInitializer
     {
         await SeedData(context, userManager, roleManager, logger);
     }
+
+    public static async Task InitESIndex(IElasticClient client, ILogger<DbInitializer> logger)
+    {
+        logger.LogInformation("------ Init indexes started ------");
+        logger.LogInformation("------ Init rooms index started ------");
+
+        var roomIndex = "rooms";
+        if ((await client.Indices.ExistsAsync(roomIndex)).Exists)
+        {
+            logger.LogInformation("------ Init rooms index skipped ------");
+        }
+        else
+        {
+            await client.Indices.CreateAsync(roomIndex, x => x
+                .Map<RoomES>(y => y.AutoMap())
+            );
+            logger.LogInformation("------ Init rooms index completed ------");
+        }
+
+        logger.LogInformation("------ Init room reservations index started ------");
+
+        var reservationIndex = "room_reservations";
+        if ((await client.Indices.ExistsAsync(reservationIndex)).Exists)
+        {
+            logger.LogInformation("------ Init room reservations index skipped ------");
+        }
+        else
+        {
+            await client.Indices.CreateAsync(reservationIndex, x => x
+                .Map<RoomReservationES>(y => y
+                    .AutoMap()
+                    .Properties(p => p
+                        .Nested<MemberES>(n => n
+                            .Name(r => r.ReservedBy)
+                            .AutoMap()
+                        )
+                    )
+                )
+            );
+            logger.LogInformation("------ Init room reservations index completed ------");
+        }
+
+        logger.LogInformation("------ Init indexes completed ------");
+    }
+
     private static async Task SeedData(DataContext context, UserManager<AppUser> userManager,
         RoleManager<AppRole> roleManager, ILogger<DbInitializer> logger)
     {

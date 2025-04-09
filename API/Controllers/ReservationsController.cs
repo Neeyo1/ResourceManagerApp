@@ -7,12 +7,14 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using shared.Contracts.Reservation;
+using MassTransit;
 
 namespace API.Controllers;
 
 [Authorize]
 public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
-    UserManager<AppUser> userManager) : BaseApiController
+    UserManager<AppUser> userManager, IPublishEndpoint publishEndpoint) : BaseApiController
 {
     [HttpGet("rooms")]
     public async Task<ActionResult<PagedList<RoomReservationDto>>> GetRoomReservations(
@@ -63,9 +65,12 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
 
         unitOfWork.ReservationRepository.AddRoomReservation(roomReservation);
 
+        var roomReservationDto = mapper.Map<RoomReservationDto>(roomReservation);
+        await publishEndpoint.Publish(mapper.Map<ReservationCreated>(roomReservationDto));
+
         if (await unitOfWork.Complete())
         {
-            return CreatedAtAction(nameof(GetRoomReservation), new {roomReservationId = roomReservation.Id}, mapper.Map<RoomReservationDto>(roomReservation));
+            return CreatedAtAction(nameof(GetRoomReservation), new {roomReservationId = roomReservation.Id}, roomReservationDto);
         }
         return BadRequest("Failed to create roomReservation");
     }

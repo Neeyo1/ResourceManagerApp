@@ -1,4 +1,5 @@
 using System.Text;
+using API.Consumers;
 using API.Data;
 using API.Entities;
 using API.Interfaces;
@@ -76,7 +77,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddMassTransit(x => 
 {
-    //x.AddConsumersFromNamespaceContaining<..Consumer>();
+    x.AddConsumersFromNamespaceContaining<RoomCreatedConsumer>();
 
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("app", false));
 
@@ -143,7 +144,7 @@ app.UseSerilogRequestLogging();
 app.MapControllers();
 
 var retryPolicy = Polly.Policy
-    .Handle<NpgsqlException>()
+    .Handle<Exception>()
     .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(5));
 
 
@@ -157,6 +158,8 @@ var result = retryPolicy.ExecuteAndCapture(async () =>
     var logger = services.GetRequiredService<ILogger<DbInitializer>>();
     await context.Database.MigrateAsync();
     await DbInitializer.InitDb(context, userManager, roleManager, logger);
+    var elasticClient = services.GetRequiredService<IElasticClient>();
+    await DbInitializer.InitESIndex(elasticClient, logger);
 });
 
 if (result.Outcome == OutcomeType.Failure && result.FinalException is not null)

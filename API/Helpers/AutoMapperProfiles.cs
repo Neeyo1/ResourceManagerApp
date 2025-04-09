@@ -4,6 +4,9 @@ using shared.DTOs.Reservation;
 using shared.DTOs.Room;
 using API.Entities;
 using AutoMapper;
+using shared.Contracts.Room;
+using shared.Contracts.Reservation;
+using API.Entities.ElasticSearch;
 
 namespace API.Helpers;
 
@@ -20,6 +23,10 @@ public class AutoMapperProfiles : Profile
             .ForMember(x => x.ReservedBy, y => y.MapFrom(z => z.User));
         CreateMap<RoomReservationCreateDto, RoomReservation>();
         CreateMap<RoomWithReservations, RoomWithReservationsDto>();
+        CreateMap<RoomDto, RoomCreated>();
+        CreateMap<RoomCreated, RoomES>();
+        CreateMap<RoomReservationDto, ReservationCreated>();
+        CreateMap<ReservationCreated, RoomReservationES>();
         
         CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
         CreateMap<DateTime?, DateTime?>().ConvertUsing(d => d.HasValue 
