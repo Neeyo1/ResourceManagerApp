@@ -42,14 +42,18 @@ public class RoomsController(IUnitOfWork unitOfWork, IMapper mapper,
     {
         var room = mapper.Map<Room>(roomCreateDto);
 
-        unitOfWork.RoomRepository.AddRoom(room);
-        
-        var roomDto = mapper.Map<RoomDto>(room);
-        await publishEndpoint.Publish(mapper.Map<RoomCreated>(roomDto));
-
-        if (await unitOfWork.Complete())
+        var transactionResult = await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            return CreatedAtAction(nameof(GetRoom), new {roomId = room.Id}, roomDto);
+            unitOfWork.RoomRepository.AddRoom(room);
+            await unitOfWork.SaveChangesAsync();
+
+            await publishEndpoint.Publish(mapper.Map<RoomCreated>(room));
+            await unitOfWork.SaveChangesAsync();
+        });
+
+        if (transactionResult)
+        {
+            return CreatedAtAction(nameof(GetRoom), new {roomId = room.Id}, mapper.Map<RoomDto>(room));
         }
         return BadRequest("Failed to create room");
     }

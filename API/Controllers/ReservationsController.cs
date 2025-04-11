@@ -63,14 +63,18 @@ public class ReservationsController(IUnitOfWork unitOfWork, IMapper mapper,
         var roomReservation = mapper.Map<RoomReservation>(roomReservationCreateDto);
         roomReservation.User = user;
 
-        unitOfWork.ReservationRepository.AddRoomReservation(roomReservation);
-
-        var roomReservationDto = mapper.Map<RoomReservationDto>(roomReservation);
-        await publishEndpoint.Publish(mapper.Map<ReservationCreated>(roomReservationDto));
-
-        if (await unitOfWork.Complete())
+        var transactionResult = await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            return CreatedAtAction(nameof(GetRoomReservation), new {roomReservationId = roomReservation.Id}, roomReservationDto);
+            unitOfWork.ReservationRepository.AddRoomReservation(roomReservation);
+            await unitOfWork.SaveChangesAsync();
+
+            await publishEndpoint.Publish(mapper.Map<ReservationCreated>(roomReservation));
+            await unitOfWork.SaveChangesAsync();
+        });
+
+        if (transactionResult)
+        {
+            return CreatedAtAction(nameof(GetRoomReservation), new {roomReservationId = roomReservation.Id}, mapper.Map<RoomReservationDto>(roomReservation));
         }
         return BadRequest("Failed to create roomReservation");
     }

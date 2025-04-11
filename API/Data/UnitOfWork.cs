@@ -18,4 +18,25 @@ public class UnitOfWork(DataContext context, ITokenRepository tokenRepository,
     {
         return context.ChangeTracker.HasChanges();
     }
+
+    public async Task<bool> ExecuteInTransactionAsync(Func<Task> action)
+    {
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            await action();
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return false;
+        }
+    }
+
+    public async Task<int> SaveChangesAsync()
+    {
+        return await context.SaveChangesAsync();
+    }
 }
